@@ -1,0 +1,15 @@
+<odoo>
+  <menuitem id="menu_export_attachment_root" name="Herramientas Exportación" parent="account.menu_finance_reports"/>
+
+  <record id="action_export_attachment_wizard_menu" model="ir.actions.act_window">
+    <field name="name">Exportar adjuntos de facturas</field>
+    <field name="res_model">export.attachment.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <menuitem id="menu_export_attachment_wizard"
+            name="Exportar adjuntos de facturas"
+            parent="menu_export_attachment_root"
+            action="action_export_attachment_wizard_menu"/>
+</odoo>
