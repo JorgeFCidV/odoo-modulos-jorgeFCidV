@@ -1,0 +1,22 @@
+<odoo>
+  <record id="view_partner_form_inherit_attachment_export" model="ir.ui.view">
+    <field name="name">res.partner.form.attachment.export</field>
+    <field name="model">res.partner</field>
+    <field name="inherit_id" ref="base.view_partner_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//form/sheet/notebook" position="after">
+        <div class="oe_button_box" name="button_box">
+          <button name="action_open_attachment_export_wizard"
+                  type="object"
+                  class="oe_stat_button"
+                  context="{'default_partner_id': active_id}">
+            <div class="o_stat_info">
+              <span class="o_stat_text">Exportar adjuntos</span>
+            </div>
+          </button>
+        </div>
+      </xpath>
+    </field>
+  </record>
+</odoo>
+
