@@ -1,0 +1,9 @@
+<odoo>
+    <menuitem id="menu_xbrl_d2_root" name="XBRL D2" parent="account.menu_finance_reports"/>
+    <act_window id="action_export_xbrl_wizard"
+                name="Exportar XBRL"
+                res_model="export.xbrl.wizard"
+                view_mode="form"
+                target="new"
+                parent="menu_xbrl_d2_root"/>
+</odoo>
