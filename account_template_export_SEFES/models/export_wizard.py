@@ -42,61 +42,108 @@ class AccountTemplateExportWizard(models.TransientModel):
             raise UserError(_("Selecciona una instancia MIS."))
 
         try:
+            _logger.info("Iniciando extracción de datos MIS para instancia: %s", mis.name)
+            
             # Obtener el periodo actual de la instancia MIS
             period = mis.period_ids and mis.period_ids[0] or False
+            _logger.info("Periodo seleccionado: %s", period.name if period else "Ninguno")
             if not period:
                 raise UserError(_("La instancia MIS no tiene periodos definidos."))
 
             # Calcular el informe para el periodo
+            _logger.info("Calculando matriz MIS para periodo %s", period.name)
             matrix = mis._compute_matrix()
             if not matrix:
                 raise UserError(_("No se pudo calcular la matriz de resultados del informe MIS."))
 
             # Procesar los resultados
             values = {}
+            rows_processed = 0
+            values_found = 0
+            
             for row in matrix.iter_rows():
+                rows_processed += 1
                 # El nombre puede estar en label o en description
                 name = str(row.kpi.description or row.kpi.name or "").strip().lower()
+                _logger.debug("Procesando fila KPI: %s", name)
+                
                 if name:
                     # Obtener el valor del primer periodo (o el especificado)
-                    cell = row.cells[period.id]
+                    cell = row.cells.get(period.id)
+                    if cell:
+                        _logger.debug("Encontrada celda para KPI %s: %s", name, 
+                                    "tiene valor" if hasattr(cell, 'val') else "sin valor")
+                        
                     if cell and hasattr(cell, 'val'):
                         try:
                             val = float(cell.val or 0.0)
-                        except (ValueError, TypeError):
+                            values[name] = val
+                            values_found += 1
+                            _logger.debug("Valor extraído para %s: %f", name, val)
+                        except (ValueError, TypeError) as e:
                             val = 0.0
-                        values[name] = val
+                            values[name] = val
+                            _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
+
+            _logger.info("Procesamiento completado: %d filas procesadas, %d valores encontrados", 
+                        rows_processed, values_found)
 
             if not values:
                 raise UserError(_("No se encontraron valores en el informe MIS."))
 
+            # Log de algunos valores de ejemplo
+            sample_values = dict(list(values.items())[:3])
+            _logger.info("Muestra de valores obtenidos: %s", sample_values)
+
             return values
 
         except Exception as e:
-            _logger.error("Error al obtener valores MIS: %s", str(e))
+            _logger.error("Error al obtener valores MIS: %s", str(e), exc_info=True)
             raise UserError(_("Error al calcular el MIS: %s") % str(e))
 
     def action_generate(self):
         self.ensure_one()
+        _logger.info("Iniciando generación de plantilla Excel para compañía: %s", self.company_id.name)
+        
+        # Obtener valores MIS
+        _logger.info("Obteniendo valores del informe MIS: %s", self.mis_instance_id.name)
         mis_values = self._get_mis_values()
         if not mis_values:
             raise UserError(_("No se encontraron valores en la instancia MIS seleccionada."))
+        _logger.info("Obtenidos %d valores del informe MIS", len(mis_values))
 
+        # Cargar plantilla
+        _logger.info("Cargando plantilla Excel")
         template_data = self._load_template_bytes()
         wb = openpyxl.load_workbook(io.BytesIO(template_data), keep_vba=True)
         if 'Cuentas' not in wb.sheetnames:
             raise UserError(_("La plantilla debe tener una hoja llamada 'Cuentas'."))
         ws = wb['Cuentas']
+        _logger.info("Plantilla cargada correctamente")
 
+        # Procesar filas
         row = 14
+        valores_escritos = 0
+        coincidencias = 0
         while True:
             cell_value = ws[f"A{row}"].value
             if not cell_value:
+                _logger.info("Fin de datos en fila %d", row)
                 break
+                
             name = str(cell_value).strip().lower()
             val = mis_values.get(name, 0.0)  # usar 0 en lugar de N/D
+            
+            if val != 0.0:
+                coincidencias += 1
+            
+            _logger.debug("Fila %d: '%s' = %f", row, name, val)
             ws[f"C{row}"] = round(val, 2)
+            valores_escritos += 1
             row += 1
+            
+        _logger.info("Procesamiento completado: %d filas procesadas, %d coincidencias encontradas",
+                    valores_escritos, coincidencias)
 
         out = io.BytesIO()
         wb.save(out)
