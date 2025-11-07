@@ -1,0 +1,13 @@
+{
+  "version": "PGC2007-abreviado",
+  "namespaces": {
+    "pgc07abreviado": "http://www.icac.meh.es/es/fr/gaap/pgc07/modelo-abreviado/2025-01-01",
+    "xsd": "http://www.w3.org/2001/XMLSchema",
+    "link": "http://www.xbrl.org/2003/linkbase",
+    "xl": "http://www.xbrl.org/2003/XLink",
+    "xsi": "http://www.w3.org/2001/XMLSchema-instance",
+    "xbrli": "http://www.xbrl.org/2003/instance",
+    "xlink": "http://www.w3.org/1999/xlink"
+  },
+  "rubrics": {}
+}

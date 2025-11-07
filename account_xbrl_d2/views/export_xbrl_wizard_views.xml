@@ -6,6 +6,7 @@
             <form string="Exportar XBRL">
                 <group>
                     <field name="fiscal_year_id"/>
+                    <field name="taxonomy_type"/>
                 </group>
                 <footer>
                     <button string="Exportar" type="object" name="action_export_xbrl" class="btn-primary"/>

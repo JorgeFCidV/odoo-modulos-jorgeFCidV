@@ -1,6 +1,6 @@
 {
     "name": "Account XBRL Export for D2",
-    "version": "17.0.1.0.0",
+    "version": "17.0.2.0.0",
     "author": "Tu Empresa, OCA",
     "website": "https://github.com/tuempresa/account_xbrl_d2",
     "category": "Accounting/Localizations",
