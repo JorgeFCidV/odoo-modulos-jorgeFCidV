@@ -1,5 +1,5 @@
 from odoo import models, fields, api, _  # pyright: ignore[reportMissingImports]
-from odoo.exceptions import UserError  # pyright: ignore[reportMissingImports]
+from odoo.exceptions import UserError, ValidationError  # pyright: ignore[reportMissingImports]
 import base64
 import io
 import openpyxl  # pyright: ignore[reportMissingModuleSource]
@@ -41,33 +41,38 @@ class AccountTemplateExportWizard(models.TransientModel):
         if not mis:
             raise UserError(_("Selecciona una instancia MIS."))
 
-        # Obtener datos del informe MIS con la API moderna
         try:
-            # En Odoo 17, MIS Builder usa estos métodos
-            if hasattr(mis, "_get_report_data"):
-                report_data = mis._get_report_data()
-            elif hasattr(mis, "_compute_report_data"):
-                report_data = mis._compute_report_data()
-            else:
-                raise UserError(_("La instancia MIS no tiene un método válido para obtener datos."))
+            # Obtener el periodo actual de la instancia MIS
+            period = mis.period_ids and mis.period_ids[0] or False
+            if not period:
+                raise UserError(_("La instancia MIS no tiene periodos definidos."))
+
+            # Calcular el informe para el periodo
+            matrix = mis._compute_matrix()
+            if not matrix:
+                raise UserError(_("No se pudo calcular la matriz de resultados del informe MIS."))
+
+            # Procesar los resultados
+            values = {}
+            for row in matrix.iter_rows():
+                # El nombre puede estar en label o en description
+                name = str(row.label or row.description or "").strip().lower()
+                if name:
+                    # Intentar obtener el valor numérico
+                    try:
+                        val = float(row.total or 0.0)
+                    except (ValueError, TypeError):
+                        val = 0.0
+                    values[name] = val
+
+            if not values:
+                raise UserError(_("No se encontraron valores en el informe MIS."))
+
+            return values
+
         except Exception as e:
-            raise UserError(_("Error al calcular el MIS: %s") % e)
-
-        if not report_data or not report_data.get("cells"):
-            raise ValidationError(_("No se encontraron valores en la instancia MIS seleccionada."))  # pyright: ignore[reportUndefinedVariable]
-
-        # Procesar estructura de datos del MIS
-        values = {}
-        for cell_key, cell_info in report_data["cells"].items():
-            name = str(cell_info.get("label") or cell_key or "").strip().lower()
-            val = cell_info.get("value", 0.0)
-            try:
-                val = float(val or 0.0)
-            except Exception:
-                val = 0.0
-            values[name] = val
-
-        return values
+            _logger.error("Error al obtener valores MIS: %s", str(e))
+            raise UserError(_("Error al calcular el MIS: %s") % str(e))
 
     def action_generate(self):
         self.ensure_one()
