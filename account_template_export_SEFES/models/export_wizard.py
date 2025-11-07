@@ -52,7 +52,14 @@ class AccountTemplateExportWizard(models.TransientModel):
 
             # Calcular el informe para el periodo
             _logger.info("Calculando matriz MIS para periodo %s", period.name)
-            matrix = mis._compute_matrix()
+            
+            # Intentar obtener los datos del informe
+            matrix = None
+            if hasattr(mis, 'compute'):
+                matrix = mis.compute()
+            elif hasattr(mis, '_compute_matrix'):
+                matrix = mis._compute_matrix()
+            
             if not matrix:
                 raise UserError(_("No se pudo calcular la matriz de resultados del informe MIS."))
 
@@ -64,26 +71,28 @@ class AccountTemplateExportWizard(models.TransientModel):
             for row in matrix.iter_rows():
                 rows_processed += 1
                 # El nombre puede estar en label o en description
-                name = str(row.kpi.description or row.kpi.name or "").strip().lower()
+                name = str(getattr(row, 'description', '') or getattr(row, 'name', '') or "").strip().lower()
                 _logger.debug("Procesando fila KPI: %s", name)
                 
                 if name:
-                    # Obtener el valor del primer periodo (o el especificado)
-                    cell = row.cells.get(period.id)
-                    if cell:
-                        _logger.debug("Encontrada celda para KPI %s: %s", name, 
-                                    "tiene valor" if hasattr(cell, 'val') else "sin valor")
+                    try:
+                        # Obtener el valor directamente del row
+                        val = 0.0
+                        if hasattr(row, 'val'):
+                            val = float(row.val or 0.0)
+                        elif hasattr(row, 'total'):
+                            val = float(row.total or 0.0)
+                        elif hasattr(row, 'amount'):
+                            val = float(row.amount or 0.0)
                         
-                    if cell and hasattr(cell, 'val'):
-                        try:
-                            val = float(cell.val or 0.0)
-                            values[name] = val
-                            values_found += 1
-                            _logger.debug("Valor extraído para %s: %f", name, val)
-                        except (ValueError, TypeError) as e:
-                            val = 0.0
-                            values[name] = val
-                            _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
+                        values[name] = val
+                        values_found += 1
+                        _logger.debug("Valor extraído para %s: %f", name, val)
+                        
+                    except (ValueError, TypeError) as e:
+                        val = 0.0
+                        values[name] = val
+                        _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
 
             _logger.info("Procesamiento completado: %d filas procesadas, %d valores encontrados", 
                         rows_processed, values_found)
