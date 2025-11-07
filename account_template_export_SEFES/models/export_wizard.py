@@ -94,11 +94,20 @@ class AccountTemplateExportWizard(models.TransientModel):
         out = io.BytesIO()
         wb.save(out)
         out.seek(0)
-        self.generated_file = base64.b64encode(out.read())
-        self.generated_filename = f"{self.company_id.name.replace(' ', '_')}_MIS_{fields.Date.today()}.xlsm"
+        file_data = out.read()
+        
+        # Guardar el archivo generado
+        self.write({
+            'generated_file': base64.b64encode(file_data),
+            'generated_filename': f"{self.company_id.name.replace(' ', '_')}_MIS_{fields.Date.today()}.xlsm"
+        })
 
         return {
-            'type': 'ir.actions.act_url',
-            'url': f"data:application/vnd.ms-excel;base64,{self.generated_file.decode()}",
+            'type': 'ir.actions.act_window',
+            'res_model': 'account.template.export.wizard',
+            'view_mode': 'form',
+            'res_id': self.id,
+            'views': [(False, 'form')],
             'target': 'new',
+            'context': self._context,
         }

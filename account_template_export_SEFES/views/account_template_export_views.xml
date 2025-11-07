@@ -29,9 +29,12 @@
                     <field name="company_id"/>
                     <field name="mis_instance_id"/>
                     <field name="template_id"/>
+                    <field name="generated_file" filename="generated_filename" readonly="1" attrs="{'invisible': [('generated_file', '=', False)]}"/>
+                    <field name="generated_filename" invisible="1"/>
                 </group>
                 <footer>
-                    <button string="Generar y descargar" type="object" name="action_generate" class="btn-primary"/>
+                    <button string="Generar" type="object" name="action_generate" class="btn-primary" attrs="{'invisible': [('generated_file', '!=', False)]}"/>
+                    <button string="Generar nuevo" type="object" name="action_generate" class="btn-secondary" attrs="{'invisible': [('generated_file', '=', False)]}"/>
                     <button string="Cancelar" special="cancel" class="btn-secondary"/>
                 </footer>
             </form>
