@@ -56,14 +56,16 @@ class AccountTemplateExportWizard(models.TransientModel):
             values = {}
             for row in matrix.iter_rows():
                 # El nombre puede estar en label o en description
-                name = str(row.label or row.description or "").strip().lower()
+                name = str(row.kpi.description or row.kpi.name or "").strip().lower()
                 if name:
-                    # Intentar obtener el valor numérico
-                    try:
-                        val = float(row.total or 0.0)
-                    except (ValueError, TypeError):
-                        val = 0.0
-                    values[name] = val
+                    # Obtener el valor del primer periodo (o el especificado)
+                    cell = row.cells[period.id]
+                    if cell and hasattr(cell, 'val'):
+                        try:
+                            val = float(cell.val or 0.0)
+                        except (ValueError, TypeError):
+                            val = 0.0
+                        values[name] = val
 
             if not values:
                 raise UserError(_("No se encontraron valores en el informe MIS."))
