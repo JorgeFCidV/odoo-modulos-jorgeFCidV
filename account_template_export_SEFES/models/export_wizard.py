@@ -55,44 +55,63 @@ class AccountTemplateExportWizard(models.TransientModel):
             
             # Intentar obtener los datos del informe
             matrix = None
-            if hasattr(mis, 'compute'):
-                matrix = mis.compute()
-            elif hasattr(mis, '_compute_matrix'):
-                matrix = mis._compute_matrix()
-            
-            if not matrix:
-                raise UserError(_("No se pudo calcular la matriz de resultados del informe MIS."))
+            try:
+                if hasattr(mis, 'compute'):
+                    _logger.debug("Usando método compute()")
+                    matrix = mis.compute()
+                elif hasattr(mis, '_compute_matrix'):
+                    _logger.debug("Usando método _compute_matrix()")
+                    matrix = mis._compute_matrix()
+                
+                _logger.debug("Tipo de datos recibidos: %s", type(matrix).__name__)
+                
+                if matrix:
+                    if isinstance(matrix, dict):
+                        _logger.debug("Datos recibidos como diccionario con claves: %s", list(matrix.keys()))
+                    else:
+                        _logger.debug("Datos recibidos como objeto de tipo: %s", type(matrix).__name__)
+                
+                if not matrix:
+                    raise UserError(_("No se pudo calcular la matriz de resultados del informe MIS."))
+                    
+            except Exception as e:
+                _logger.error("Error calculando matriz MIS: %s", str(e), exc_info=True)
+                raise UserError(_("Error al calcular la matriz MIS: %s") % str(e))
 
-            # Procesar los resultados
+            # Procesar los resultados del diccionario
             values = {}
             rows_processed = 0
             values_found = 0
             
-            for row in matrix.iter_rows():
-                rows_processed += 1
-                # El nombre puede estar en label o en description
-                name = str(getattr(row, 'description', '') or getattr(row, 'name', '') or "").strip().lower()
-                _logger.debug("Procesando fila KPI: %s", name)
-                
-                if name:
-                    try:
-                        # Obtener el valor directamente del row
-                        val = 0.0
-                        if hasattr(row, 'val'):
-                            val = float(row.val or 0.0)
-                        elif hasattr(row, 'total'):
-                            val = float(row.total or 0.0)
-                        elif hasattr(row, 'amount'):
-                            val = float(row.amount or 0.0)
-                        
-                        values[name] = val
-                        values_found += 1
-                        _logger.debug("Valor extraído para %s: %f", name, val)
-                        
-                    except (ValueError, TypeError) as e:
-                        val = 0.0
-                        values[name] = val
-                        _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
+            # En Odoo 17, matrix es un diccionario con la estructura de datos MIS
+            _logger.debug("Estructura de datos MIS recibida: %s", matrix.keys() if matrix else "None")
+            
+            # Procesar las líneas del informe MIS
+            if isinstance(matrix, dict):
+                for kpi_id, kpi_data in matrix.get('kpi_data', {}).items():
+                    rows_processed += 1
+                    name = str(kpi_data.get('name', '') or kpi_data.get('description', '')).strip().lower()
+                    _logger.debug("Procesando KPI %s: %s", kpi_id, name)
+                    
+                    if name:
+                        try:
+                            # Intentar obtener el valor del periodo actual
+                            period_data = kpi_data.get('periods', {}).get(str(period.id), {})
+                            val = 0.0
+                            
+                            if isinstance(period_data, dict):
+                                val = float(period_data.get('value', 0.0) or 0.0)
+                            elif isinstance(period_data, (int, float)):
+                                val = float(period_data)
+                            
+                            values[name] = val
+                            values_found += 1
+                            _logger.debug("Valor extraído para %s: %f", name, val)
+                            
+                        except (ValueError, TypeError) as e:
+                            val = 0.0
+                            values[name] = val
+                            _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
 
             _logger.info("Procesamiento completado: %d filas procesadas, %d valores encontrados", 
                         rows_processed, values_found)
