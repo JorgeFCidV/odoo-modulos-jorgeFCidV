@@ -56,11 +56,19 @@ class AccountTemplateExportWizard(models.TransientModel):
             # Intentar obtener los datos del informe
             matrix = None
             try:
-                if hasattr(mis, 'compute'):
-                    _logger.debug("Usando método compute()")
+                # En Odoo 17, intentar primero el método actual
+                if hasattr(mis, '_compute_report_data'):
+                    _logger.debug("Usando método _compute_report_data()")
+                    matrix = mis._compute_report_data()
+                elif hasattr(mis, '_get_report_data'):
+                    _logger.debug("Usando método _get_report_data()")
+                    matrix = mis._get_report_data()
+                # Métodos anteriores como fallback
+                elif hasattr(mis, 'compute'):
+                    _logger.debug("Usando método legacy compute()")
                     matrix = mis.compute()
                 elif hasattr(mis, '_compute_matrix'):
-                    _logger.debug("Usando método _compute_matrix()")
+                    _logger.debug("Usando método legacy _compute_matrix()")
                     matrix = mis._compute_matrix()
                 
                 _logger.debug("Tipo de datos recibidos: %s", type(matrix).__name__)
@@ -83,35 +91,99 @@ class AccountTemplateExportWizard(models.TransientModel):
             rows_processed = 0
             values_found = 0
             
-            # En Odoo 17, matrix es un diccionario con la estructura de datos MIS
+            # En Odoo 17, matrix puede tener diferentes estructuras
             _logger.debug("Estructura de datos MIS recibida: %s", matrix.keys() if matrix else "None")
             
-            # Procesar las líneas del informe MIS
+            # Determinar la estructura del informe MIS
+            kpi_data = None
             if isinstance(matrix, dict):
-                for kpi_id, kpi_data in matrix.get('kpi_data', {}).items():
-                    rows_processed += 1
-                    name = str(kpi_data.get('name', '') or kpi_data.get('description', '')).strip().lower()
-                    _logger.debug("Procesando KPI %s: %s", kpi_id, name)
+                if 'kpi_data' in matrix:
+                    kpi_data = matrix['kpi_data']
+                elif 'kpi_matrix' in matrix:
+                    kpi_data = matrix['kpi_matrix']
+                else:
+                    kpi_data = matrix  # La matriz podría ser el diccionario de KPIs directamente
+            
+            if not kpi_data:
+                raise UserError(_("No se encontraron datos KPI en el informe MIS."))
+            
+            # Procesar las líneas del informe MIS
+            _logger.info("KPIs disponibles en el informe MIS:")
+            for kpi_id, kpi_data in kpi_data.items():
+                rows_processed += 1
+                # Obtenemos el nombre y descripción
+                name = None
+                if isinstance(kpi_data, dict):
+                    name = str(kpi_data.get('name', '') or kpi_data.get('description', '') or 
+                             kpi_data.get('kpi_name', '') or kpi_data.get('account_name', '')).strip()
+                elif hasattr(kpi_data, 'name'):
+                    name = str(kpi_data.name).strip()
+                elif hasattr(kpi_data, 'description'):
+                    name = str(kpi_data.description).strip()
+                
+                if not name:
+                    _logger.warning("KPI %s no tiene nombre o descripción", kpi_id)
+                    continue
+                
+                _logger.info("KPI %s: %s", kpi_id, name)
+                
+                # Generar variantes del nombre para búsqueda flexible
+                name_variants = set()
+                # Versión original
+                name_variants.add(name.strip())
+                # Versión en minúsculas
+                name_variants.add(name.lower())
+                # Sin puntos
+                name_variants.add(name.lower().replace('.', ''))
+                # Sin espacios
+                name_variants.add(name.lower().replace(' ', ''))
+                # Solo alfanuméricos
+                name_variants.add(''.join(c for c in name.lower() if c.isalnum()))
+                # Con guiones
+                name_variants.add(name.lower().replace(' ', '-'))
+                # Con guiones bajos
+                name_variants.add(name.lower().replace(' ', '_'))
+                
+                _logger.debug("Procesando KPI %s con variantes: %s", name, name_variants)
+                
+                try:
+                    # Intentar obtener el valor según la estructura
+                    val = 0.0
                     
-                    if name:
-                        try:
-                            # Intentar obtener el valor del periodo actual
+                    if isinstance(kpi_data, dict):
+                        # Estructura nueva de Odoo 17
+                        if 'periods' in kpi_data:
                             period_data = kpi_data.get('periods', {}).get(str(period.id), {})
-                            val = 0.0
-                            
                             if isinstance(period_data, dict):
                                 val = float(period_data.get('value', 0.0) or 0.0)
                             elif isinstance(period_data, (int, float)):
                                 val = float(period_data)
-                            
-                            values[name] = val
-                            values_found += 1
-                            _logger.debug("Valor extraído para %s: %f", name, val)
-                            
-                        except (ValueError, TypeError) as e:
-                            val = 0.0
-                            values[name] = val
-                            _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
+                        # Estructura directa
+                        elif 'value' in kpi_data:
+                            val = float(kpi_data.get('value', 0.0) or 0.0)
+                        elif 'amount' in kpi_data:
+                            val = float(kpi_data.get('amount', 0.0) or 0.0)
+                    elif hasattr(kpi_data, 'value'):
+                        val = float(kpi_data.value or 0.0)
+                    elif hasattr(kpi_data, 'amount'):
+                        val = float(kpi_data.amount or 0.0)
+                    elif isinstance(kpi_data, (int, float)):
+                        val = float(kpi_data)
+                    
+                    if val != 0.0:
+                        values_found += 1
+                        # Guardar el valor con todas las variantes del nombre
+                        for variant in name_variants:
+                            if variant:  # Asegurarse de que la variante no está vacía
+                                values[variant] = val
+                        _logger.debug("Valor extraído para %s: %f", name, val)
+                    
+                except (ValueError, TypeError) as e:
+                    _logger.warning("Error convirtiendo valor para %s: %s. Usando 0.0", name, str(e))
+                    # Guardar 0.0 para todas las variantes
+                    for variant in name_variants:
+                        if variant:
+                            values[variant] = 0.0
 
             _logger.info("Procesamiento completado: %d filas procesadas, %d valores encontrados", 
                         rows_processed, values_found)
@@ -150,28 +222,62 @@ class AccountTemplateExportWizard(models.TransientModel):
         _logger.info("Plantilla cargada correctamente")
 
         # Procesar filas
-        row = 14
-        valores_escritos = 0
-        coincidencias = 0
+        row = 14  # Comenzar desde la fila 14
+        matches_found = 0
+        total_rows = 0
         while True:
             cell_value = ws[f"A{row}"].value
             if not cell_value:
                 _logger.info("Fin de datos en fila %d", row)
                 break
                 
-            name = str(cell_value).strip().lower()
-            val = mis_values.get(name, 0.0)  # usar 0 en lugar de N/D
+            total_rows += 1
+            # Obtener el nombre original de la celda
+            original_name = str(cell_value).strip()
             
+            # Generar variantes del nombre para búsqueda flexible
+            name_variants = [
+                original_name.lower(),  # Versión en minúsculas
+                original_name.lower().replace('.', ''),  # Sin puntos
+                original_name.lower().replace(' ', ''),  # Sin espacios
+                ''.join(c for c in original_name.lower() if c.isalnum()),  # Solo alfanuméricos
+                original_name.lower().replace(' ', '-'),  # Con guiones
+                original_name.lower().replace(' ', '_')   # Con guiones bajos
+            ]
+            
+            # Intentar encontrar el valor con cualquiera de las variantes
+            val = 0.0
+            found_variant = None
+            for variant in name_variants:
+                if variant in mis_values:
+                    val = mis_values[variant]
+                    found_variant = variant
+                    break
+            
+            # Registrar si se encontró coincidencia
             if val != 0.0:
-                coincidencias += 1
+                matches_found += 1
+                _logger.info("Coincidencia encontrada para '%s' usando variante '%s': %f", 
+                          original_name, found_variant, val)
+            else:
+                _logger.warning("No se encontró coincidencia para '%s'. Variantes probadas: %s", 
+                             original_name, name_variants)
             
-            _logger.debug("Fila %d: '%s' = %f", row, name, val)
+            # Escribir el valor en la columna C, redondeado a 2 decimales
             ws[f"C{row}"] = round(val, 2)
-            valores_escritos += 1
             row += 1
             
-        _logger.info("Procesamiento completado: %d filas procesadas, %d coincidencias encontradas",
-                    valores_escritos, coincidencias)
+        _logger.info("Procesamiento completado: %d coincidencias encontradas de %d filas procesadas", 
+                    matches_found, total_rows)
+        
+        if matches_found == 0:
+            _logger.warning("¡ADVERTENCIA! No se encontraron coincidencias para ninguna cuenta")
+
+        # Si el porcentaje de coincidencias es muy bajo, mostrar una advertencia
+        match_percentage = (matches_found / total_rows * 100) if total_rows > 0 else 0
+        if match_percentage < 50:
+            _logger.warning("Solo se encontraron coincidencias para el %.2f%% de las cuentas", 
+                         match_percentage)
 
         out = io.BytesIO()
         wb.save(out)
@@ -179,10 +285,32 @@ class AccountTemplateExportWizard(models.TransientModel):
         file_data = out.read()
         
         # Guardar el archivo generado
+        filename = f"{self.company_id.name.replace(' ', '_')}_MIS_{fields.Date.today()}"
+        if self.template_id:
+            filename += f"_{self.template_id.name.replace(' ', '_')}"
+        filename += ".xlsm"
+        
         self.write({
             'generated_file': base64.b64encode(file_data),
-            'generated_filename': f"{self.company_id.name.replace(' ', '_')}_MIS_{fields.Date.today()}.xlsm"
+            'generated_filename': filename
         })
+
+        # Si el porcentaje de coincidencias es bajo, mostrar un mensaje al usuario
+        if match_percentage < 50:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Advertencia'),
+                    'message': _(
+                        'Solo se encontraron coincidencias para el %.2f%% de las cuentas. '
+                        'Verifica que los nombres de las cuentas en la plantilla coincidan '
+                        'con los del informe MIS.'
+                    ) % match_percentage,
+                    'type': 'warning',
+                    'sticky': True,
+                }
+            }
 
         return {
             'type': 'ir.actions.act_window',
