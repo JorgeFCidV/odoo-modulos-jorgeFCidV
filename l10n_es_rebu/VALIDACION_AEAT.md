@@ -38,6 +38,61 @@ El REBU se aplica a:
 
 ---
 
+## Tipos de IVA en Compras REBU
+
+### 📌 IMPORTANTE (Actualizado 15 Nov 2025)
+
+No existe un único tipo de IVA para compras REBU. Depende del **origen de la compra**:
+
+### Compra 1: Adquisición a Particular (**0% IVA**)
+
+**Características**:
+- Compra de obra de arte a **persona física** (no sujeto pasivo del IVA)
+- El particular NO emite factura con IVA
+- Ejemplo: Compra cuadro a coleccionista jubilado
+
+**IVA**:
+- 0% (no existe IVA en la transacción)
+- No deducible (porque no existe IVA a deducir)
+
+**Configuración Odoo**:
+- Posición fiscal: "REBU - Compra a Particular (0%)"
+- Impuesto: "IVA Soportado no deducible REBU 0%"
+
+### Compra 2: Adquisición Directa a Artista Original (**10% IVA NO DEDUCIBLE**)
+
+**Características**:
+- Compra de obra **original del artista** (persona física o profesional)
+- Artista emite factura con **IVA 10% reducido**
+- Este IVA 10% **NO es deducible** bajo régimen REBU
+- Ejemplo: Compra cuadro original a pintor profesional
+
+**IVA**:
+- 10% (IVA reducido para creadores)
+- 0% deducible (no deducible en REBU)
+
+**Configuración Odoo**:
+- Posición fiscal: "REBU - Compra a Artista Original (10%)"
+- Impuesto: "IVA Soportado no deducible REBU 10%"
+
+### Venta: Entregas a Cliente (**21% IVA REPERCUTIDO**)
+
+**Características**:
+- Venta a **cliente final** (galería, coleccionista, inversor)
+- Se aplica IVA 21% repercutido incluido
+- Aplica a **TODAS las ventas** bajo régimen REBU
+- Ejemplo: Venta a galería o coleccionista
+
+**IVA**:
+- 21% repercutido incluido
+- Deducible: Sí (se aplica sobre margen)
+
+**Configuración Odoo**:
+- Posición fiscal: "REBU - Bienes Usados Artísticos (Venta 21%)"
+- Impuesto: "IVA Repercutido incluido REBU 21%"
+
+---
+
 ## Funcionamiento del REBU
 
 ### Sistema 1: Operación por operación (TU CASO - RECOMENDADO)

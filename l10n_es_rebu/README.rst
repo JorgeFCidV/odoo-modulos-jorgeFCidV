@@ -57,23 +57,66 @@ Usage
 =====
 
 Una vez actualizado el plan contable (Impuestos y Posiciones fiscales)
-podremos asignar los impuestos REBU a los productos de la empresa:
+existen **dos escenarios principales** según el tipo de operación:
+
+Configuración de Productos
+==========================
+
+Para productos que se venden bajo régimen REBU:
 
 1. Crear o ir a la ficha de un producto
 
-2. | Asignar el siguiente impuesto en el campo "Impuestos cliente"
+2. | En el campo "Impuestos cliente", asignar:
    | *IVA Repercutido incluido REBU 21%*
 
-3. | Asignar el siguiente impuesto en el campo "Impuestos proveedor"
-   | *IVA Soportado no deducible REBU 21%*
+3. | En el campo "Impuestos proveedor", asignar según el origen de compra:
+   | 
+   | - **Compra a Particular**: *IVA Soportado no deducible REBU 0% (Particular)*
+   | - **Compra a Artista Original**: *IVA Soportado no deducible REBU 10% (Artista Original)*
 
-También podemos asignar la posición fiscal a los proveedores y clientes
-para cambiar los impuestos de compra y venta en las facturas:
+Configuración de Contactos/Proveedores
+=======================================
 
-1. Crear o ir a la ficha de un contacto
+Alternativamente, podemos asignar la posición fiscal directamente al 
+contacto del proveedor o cliente para que se aplique automáticamente 
+en todas las facturas:
 
-2. | Asignar la siguiente posición fiscal en el campo "Posición fiscal"
-   | *REBU - Bienes Usados Artísticos*
+**Para Proveedores (Origen de Compra)**
+1. Crear o ir a la ficha de un contacto proveedor
+
+2. | Si es un particular (compra sin IVA):
+   | Asignar la posición fiscal: *REBU - Compra a Particular (0%)*
+
+3. | Si es un artista con obra original (IVA 10% no deducible):
+   | Asignar la posición fiscal: *REBU - Compra a Artista Original (10%)*
+
+**Para Clientes (Ventas)**
+1. Crear o ir a la ficha de un contacto cliente
+
+2. | Asignar la posición fiscal: *REBU - Bienes Usados Artísticos (Venta 21%)*
+   | Se aplicará automáticamente el IVA 21% repercutido incluido en todas las ventas
+
+Casos de Aplicación
+===================
+
+**Caso 1: Compra a Particular sin IVA (0%)**
+   - Adquirir cuadro de un coleccionista privado
+   - El particular no factura IVA
+   - Posición fiscal: REBU - Compra a Particular (0%)
+   - IVA en compra: 0%
+
+**Caso 2: Compra Directa a Artista Original (10% no deducible)**
+   - Adquirir obra original directamente del artista
+   - Artista produce la obra con IVA 10% reducido
+   - Este IVA 10% no es deducible en régimen REBU
+   - Posición fiscal: REBU - Compra a Artista Original (10%)
+   - IVA en compra: 10% (no deducible)
+
+**Caso 3: Venta a Cliente (21% repercutido)**
+   - Vender cuadro a galería, coleccionista o inversor
+   - Se aplica IVA 21% repercutido incluido
+   - Posición fiscal: REBU - Bienes Usados Artísticos (Venta 21%)
+   - IVA en venta: 21% (repercutido)
 
 Bug Tracker
 ===========
@@ -90,5 +133,5 @@ Authors
 * Jorge Fernández
 
 ==========================================
-REAV - Régimen Especial Agencias de Viajes
+REBU - Régimen Especial Bienes Usados 
 ==========================================

@@ -30,17 +30,19 @@ Todos los IDs internos actualizados: reav → rebu
 - Autor: Jorge Fernández
 - Versión: 17.0.1.0.0
 
-#### 3. **Impuestos configurados** ✅
+#### 3. **Impuestos configurados** ✅ (ACTUALIZADO 15 NOV 2025)
 ```
-Compra:  IVA Soportado no deducible REBU 21%  (account_tax_template_p_rebu0)
-Venta:   IVA Repercutido incluido REBU 21%    (account_tax_template_s_rebu0)
-Grupo:   tax_group_rebu
+Compra a Particular:        0% IVA no deducible REBU
+Compra a Artista Original: 10% IVA no deducible REBU
+Venta:                     21% IVA repercutido incluido REBU
+Grupo:                     tax_group_rebu
 ```
 
-#### 4. **Posición Fiscal** ✅
+#### 4. **Posiciones Fiscales** ✅ (ACTUALIZADO 15 NOV 2025)
 ```
-fp_rebu: "REBU - Bienes Usados Artísticos"
-Mapea todos los IVA estándar (4%, 10%, 21%, 0%) al régimen REBU
+fp_rebu_particular:  "REBU - Compra a Particular (0%)"
+fp_rebu_artist:      "REBU - Compra a Artista Original (10%)"
+fp_rebu_sale:        "REBU - Bienes Usados Artísticos (Venta 21%)"
 ```
 
 #### 5. **Documentación completa** ✅
@@ -61,14 +63,44 @@ Mapea todos los IVA estándar (4%, 10%, 21%, 0%) al régimen REBU
 ✅ **Objeto de arte** (bienes artísticos)  
 ✅ **Margen bruto como base** (implementado mediante IVA especial)  
 ✅ **IVA no deducible en compras** (implementado)  
-✅ **21% IVA** (válido para bienes artísticos)  
+✅ **Compra a Particular: 0% IVA** (nuevo)  
+✅ **Compra a Artista: 10% IVA no deducible** (nuevo)  
+✅ **Venta: 21% IVA repercutido** (sin cambios)  
 
 ### Notas importantes:
 
 ⚠️ **Régimen voluntario**: La empresa debe optar formalmente  
+⚠️ **Tipo de proveedor**: Asignar posición fiscal correcta según origen (particular vs artista)  
 ⚠️ **Cálculo especial del margen**: Requiere disciplina en precios  
-⚠️ **Otros tipos de IVA**: Si comercializas libros, discos, etc., el módulo es extensible  
+⚠️ **Otros tipos de IVA**: 0% (particular), 10% (artista), 21% (venta) - todos configurados  
 ⚠️ **Obligaciones de facturación**: Debe constar en factura que se aplica REBU  
+
+---
+
+## 🆕 NUEVAS OPCIONES DE COMPRA (15 NOV 2025)
+
+### Caso 1: Compra a Particular (0% IVA)
+```
+Posición fiscal:   REBU - Compra a Particular (0%)
+Impuesto:         0% no deducible
+Ejemplo:          Cuadro de jubilado coleccionista
+Precio pagado:    TOTAL sin IVA
+```
+
+### Caso 2: Compra a Artista Original (10% IVA no deducible)
+```
+Posición fiscal:   REBU - Compra a Artista Original (10%)
+Impuesto:         10% no deducible
+Ejemplo:          Obra original de pintor profesional
+Precio pagado:    TOTAL + 10% IVA (no deducible)
+```
+
+### Caso 3: Venta a Cliente (21% IVA repercutido)
+```
+Posición fiscal:   REBU - Bienes Usados Artísticos (Venta 21%)
+Impuesto:         21% repercutido incluido
+Ejemplo:          Venta a galería o coleccionista
+Precio facturado: TOTAL + 21% IVA  
 
 ---
 
@@ -139,6 +171,7 @@ Para dudas sobre este módulo:
 
 ## 📅 Historial
 
+- **2025-11-15**: CORRECCIÓN: Actualizar tipos de IVA en compras (0% particular, 10% artista, 21% venta)
 - **2025-11-14**: Transformación de REAV a REBU completada
 - **2025-11-14**: Validación contra documentación AEAT
 - **2025-11-14**: Documentación actualizada con información oficial

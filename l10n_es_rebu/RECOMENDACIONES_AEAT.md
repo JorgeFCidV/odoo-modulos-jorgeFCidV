@@ -149,6 +149,90 @@ En Odoo:
 
 ---
 
+## 4.1 Tipos de IVA en Compras REBU (IMPORTANTE - NUEVAS OPCIONES)
+
+### Caso Real 1: Compra a Particular (0% IVA)
+
+**Situación**:
+- Adquisición de obra de arte de un **particular** (persona física)
+- El particular no es sujeto pasivo del IVA
+- No existe factura o factura sin IVA
+
+**Características**:
+- IVA: 0% (no hay IVA en la transacción)
+- Documentación: Contrato privado, recibí, etc.
+- Ejemplo: Comprar cuadro a jubilado coleccionista
+
+**Configuración en Odoo**:
+```
+Posición fiscal proveedor: "REBU - Compra a Particular (0%)"
+Impuesto asignado: "IVA Soportado no deducible REBU 0%"
+```
+
+**Ejemplo de cálculo**:
+```
+Precio compra: 1.000 €
+IVA: 0 € (particular sin IVA)
+Total a pagar: 1.000 €
+
+Venta posterior: 1.500 €
+Margen: 500 €
+BI = (500 × 100) ÷ 121 = 413,22 €
+IVA venta: 413,22 × 0,21 = 86,78 €
+```
+
+### Caso Real 2: Compra Directa a Artista Original (10% IVA NO DEDUCIBLE)
+
+**Situación**:
+- Adquisición de obra **original directamente del artista**
+- Artista emite factura con IVA reducido del 10%
+- IVA 10% **NO es deducible** en régimen REBU
+
+**Características**:
+- IVA: 10% (IVA reducido para creadores)
+- Deducibilidad: 0% (no deducible en REBU)
+- Documentación: Factura del artista con IVA 10%
+- Ejemplo: Comprar cuadro original a pintor profesional
+
+**Configuración en Odoo**:
+```
+Posición fiscal proveedor: "REBU - Compra a Artista Original (10%)"
+Impuesto asignado: "IVA Soportado no deducible REBU 10%"
+```
+
+**Ejemplo de cálculo**:
+```
+Precio base compra: 1.000 €
+IVA (10% no deducible): 100 €
+Total a pagar: 1.100 €
+
+Venta posterior: 1.500 €
+Margen: 500 € (diferencia de precios con IVA)
+BI = (500 × 100) ÷ 121 = 413,22 €
+IVA venta: 413,22 × 0,21 = 86,78 €
+```
+
+### Caso Real 3: Venta a Cliente (21% IVA REPERCUTIDO - SIN CAMBIOS)
+
+**Situación**:
+- Venta de obra a **cliente final** (galería, coleccionista, inversor)
+- Aplica IVA 21% repercutido incluido
+- **Esta situación NO cambia**
+
+**Características**:
+- IVA: 21% repercutido incluido
+- Deducibilidad: 100% deducible (sobre margen)
+- Documentación: Factura cliente con IVA 21%
+- Ejemplo: Vender cuadro a galería
+
+**Configuración en Odoo**:
+```
+Posición fiscal cliente: "REBU - Bienes Usados Artísticos (Venta 21%)"
+Impuesto asignado: "IVA Repercutido incluido REBU 21%"
+```
+
+---
+
 ## 5. Obligaciones de Facturación Especiales
 
 ### Requisitos AEAT:
@@ -197,11 +281,14 @@ Acción recomendada:
 
 ## 7. Checklist para Implementar en Odoo
 
-### Fase 1: Configuración Base (✅ COMPLETADA)
-- [x] Impuesto 21% REBU no deducible en compras
+### Fase 1: Configuración Base (✅ ACTUALIZADA 15 NOV 2025)
+- [x] Impuesto 0% REBU no deducible para compra a particular
+- [x] Impuesto 10% REBU no deducible para compra a artista
 - [x] Impuesto 21% REBU incluido en ventas
-- [x] Posición fiscal REBU
-- [x] Documentación
+- [x] Posición fiscal REBU Particular (0%)
+- [x] Posición fiscal REBU Artista (10%)
+- [x] Posición fiscal REBU Venta (21%)
+- [x] Documentación actualizada
 
 ### Fase 2: Mejoras Recomendadas
 - [ ] Campo "Régimen aplicado" en factura (general/REBU)
