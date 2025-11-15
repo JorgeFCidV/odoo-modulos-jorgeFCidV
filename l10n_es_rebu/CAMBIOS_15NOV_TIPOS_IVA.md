@@ -165,57 +165,106 @@ fp_rebu_sale:       REBU - Bienes Usados Artísticos (Venta 21%)
 
 ---
 
-## 💰 Ejemplo Práctico - Impacto Financiero
+## 💰 Ejemplo Práctico - Estructura de Costos REBU
 
 ### Escenario 1: Compra a Particular, Venta Posterior
 
-**ANTES (Incorrecto)**:
+**ANTES (Configuración incorrecta - Aplicaba 21% a todo)**:
 ```
-Compra a particular: 1.000€
-IVA 21% (INCORRECTO): 210€
-Total pagado: 1.210€ ❌
+COMPRA a particular: 1.000€
+IVA 21% (incorrecto): 210€
+Total desembolso: 1.210€ ❌
 
-Venta: 1.500€
-IVA 21%: 315€
-Total facturado: 1.815€
-```
-
-**DESPUÉS (Correcto)**:
-```
-Compra a particular: 1.000€
-IVA 0% (CORRECTO): 0€
-Total pagado: 1.000€ ✅
-AHORRO: 210€
-
-Venta: 1.500€
-IVA 21%: 315€
-Total facturado: 1.815€
+VENTA REBU - Cálculo incorrecto:
+  Precio venta neto: 1.500€
+  IVA 21% sobre 1.500€: 315€
+  Total facturado: 1.815€ ❌
 ```
 
-### Escenario 2: Compra a Artista, Venta Posterior
-
-**ANTES (Incorrecto)**:
+**DESPUÉS (Configuración correcta)**:
 ```
-Compra a artista: 1.000€
-IVA 21% (INCORRECTO): 210€
-Total pagado: 1.210€ ❌
+COMPRA a particular: 1.000€
+IVA 0% (correcto - sin IVA): 0€
+Total desembolso: 1.000€ ✅
 
-Venta: 1.500€
-IVA 21%: 315€
-Total facturado: 1.815€
+VENTA REBU - Cálculo correcto según AEAT:
+  PVP (Precio venta): 1.500€
+  - Costo compra: 1.000€
+  = Margen bruto: 500€
+  
+  Base Imponible = Margen / (1 + tipo IVA)
+                 = 500€ / (1 + 0,21)
+                 = 500€ / 1,21
+                 = 413,22€
+  
+  IVA 21%: 413,22€ × 0,21 = 86,78€
+  Total facturado: 413,22€ + 86,78€ = 500€ ✅
 ```
 
-**DESPUÉS (Correcto)**:
-```
-Compra a artista: 1.000€ (base)
-IVA 10% (CORRECTO, no deducible): 100€
-Total pagado: 1.100€ ✅
-AHORRO: 110€
+### Escenario 2: Compra a Artista Original, Venta Posterior
 
-Venta: 1.500€
-IVA 21%: 315€
-Total facturado: 1.815€
+**ANTES (Configuración incorrecta - Aplicaba 21% a todo)**:
 ```
+COMPRA a artista: 1.000€
+IVA 21% (incorrecto): 210€
+Total desembolso: 1.210€ ❌
+
+VENTA REBU - Cálculo incorrecto:
+  Precio venta neto: 1.500€
+  IVA 21% sobre 1.500€: 315€
+  Total facturado: 1.815€ ❌
+```
+
+**DESPUÉS (Configuración correcta)**:
+```
+COMPRA a artista: 1.000€
+IVA 10% (correcto, no deducible): 100€
+Total desembolso (Costo de compra real): 1.100€ ✅
+
+VENTA REBU - Cálculo correcto según AEAT:
+  PVP (Precio venta): 1.500€
+  - Costo compra REAL (incluye IVA no deducible): 1.100€
+  = Margen bruto: 400€
+  
+  Base Imponible = Margen / (1 + tipo IVA)
+                 = 400€ / (1 + 0,21)
+                 = 400€ / 1,21
+                 = 330,58€
+  
+  IVA 21%: 330,58€ × 0,21 = 69,42€
+  Total facturado: 330,58€ + 69,42€ = 400€ ✅
+```
+
+**Diferencia en compra**: Se paga 1.100€ vs 1.210€
+
+---
+
+### Resumen del Impacto Financiero
+
+**Escenario 1: Compra a Particular (0% IVA)**:
+| Concepto | Cálculo | Resultado |
+|----------|---------|-----------|
+| Margen bruto | PVP 1.500€ - Costo 1.000€ | 500€ |
+| Base Imponible REBU | 500€ / 1,21 | 413,22€ |
+| IVA 21% en venta | 413,22€ × 0,21 | 86,78€ |
+| Total facturado | BI + IVA | 500€ |
+
+**Escenario 2: Compra a Artista (10% IVA no deducible)**:
+| Concepto | Cálculo | Resultado |
+|----------|---------|-----------|
+| Margen bruto | PVP 1.500€ - Costo REAL 1.100€ | 400€ |
+| Base Imponible REBU | 400€ / 1,21 | 330,58€ |
+| IVA 21% en venta | 330,58€ × 0,21 | 69,42€ |
+| Total facturado | BI + IVA | 400€ |
+
+**Comparativa de Costos**:
+
+| Escenario | Antes | Después | Ahorro |
+|-----------|-------|---------|--------|
+| **Compra a Particular** | 1.210€ (1.000€ + 210€ IVA 21%) | 1.000€ (1.000€ + 0€ IVA) | **-210€** |
+| **Compra a Artista** | 1.210€ (1.000€ + 210€ IVA 21%) | 1.100€ (1.000€ + 100€ IVA 10%) | **-110€** |
+| **Margen Particular** | 500€ | 500€ | Sin cambios |
+| **Margen Artista** | 500€ | 400€ | **-100€** (mayor IVA en compra reduce margen) |
 
 ---
 
@@ -249,6 +298,8 @@ Total facturado: 1.815€
 
 ### 1. Compatibilidad
 Estos cambios están orientados a la **realidad fiscal española** bajo régimen REBU para bienes artísticos.
+
+### 2. Estructura CSV
 
 ### 2. Estructura CSV
 Se mantuvo la estructura CSV compatible con Odoo. Los cambios son aditivos (nuevos impuestos) y no rompen compatibilidad con la venta anterior (21% se mantiene).
